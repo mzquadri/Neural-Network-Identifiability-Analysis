@@ -12,7 +12,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import networkx as nx
 
-from identifiability_checks import extract_parameters
+try:
+    from .identifiability_checks import extract_parameters
+except ImportError:  # Supports direct execution: python src/visualization.py
+    from identifiability_checks import extract_parameters
 
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
@@ -195,7 +198,10 @@ def plot_identifiability_summary(
 
 
 if __name__ == "__main__":
-    from identifiability_checks import build_network, identifiability_report
+    try:
+        from .identifiability_checks import build_network, identifiability_report
+    except ImportError:
+        from identifiability_checks import build_network, identifiability_report
 
     torch.manual_seed(42)
     arch = [5, 10, 8, 1]

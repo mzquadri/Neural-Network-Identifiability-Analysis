@@ -15,7 +15,10 @@ import torch.nn as nn
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from identifiability_checks import build_network, extract_parameters
+try:
+    from .identifiability_checks import build_network, extract_parameters
+except ImportError:  # Supports direct execution: python src/network_isomorphisms.py
+    from identifiability_checks import build_network, extract_parameters
 
 
 # ──────────────────────────────────────────────
@@ -192,25 +195,50 @@ def check_faithful_isomorphism(
                 "reason": f"Different layer {l} sizes",
             }
 
+    # Align one hidden layer at a time. A layer's permutation/sign changes its
+    # successor's input columns, so matching each original layer independently
+    # is not valid for networks with more than one hidden layer.
+    aligned_layers = [
+        {"weight": layer["weight"].clone(), "bias": layer["bias"].clone()}
+        for layer in layers_a
+    ]
     permutations_found = []
     signs_found = []
-    total_cost = 0.0
 
-    for l in range(len(layers_a) - 1):  # Hidden layers
+    for l in range(len(aligned_layers) - 1):  # Hidden layers
         perm, signs, cost = find_layer_permutation(
-            layers_a[l]["weight"],
-            layers_a[l]["bias"],
+            aligned_layers[l]["weight"],
+            aligned_layers[l]["bias"],
             layers_b[l]["weight"],
             layers_b[l]["bias"],
             allow_sign_flips=allow_sign_flips,
         )
+
+        # ``perm[source] == target``. Reorder the working copy into target
+        # order, then apply the sign selected for the corresponding source.
+        source_for_target = torch.argsort(torch.tensor(perm))
+        target_signs = torch.tensor(signs, dtype=aligned_layers[l]["weight"].dtype)[
+            source_for_target
+        ]
+        aligned_layers[l]["weight"] = aligned_layers[l]["weight"][source_for_target]
+        aligned_layers[l]["bias"] = aligned_layers[l]["bias"][source_for_target]
+        aligned_layers[l + 1]["weight"] = aligned_layers[l + 1]["weight"][:, source_for_target]
+        aligned_layers[l]["weight"] *= target_signs.unsqueeze(1)
+        aligned_layers[l]["bias"] *= target_signs
+        aligned_layers[l + 1]["weight"] *= target_signs.unsqueeze(0)
+
         permutations_found.append(perm)
         signs_found.append(signs)
-        total_cost += cost
 
-    is_isomorphic = total_cost < tol * sum(
-        l["weight"].numel() + l["bias"].numel() for l in layers_a
+    total_cost = sum(
+        (aligned["weight"] - expected["weight"]).abs().sum().item()
+        + (aligned["bias"] - expected["bias"]).abs().sum().item()
+        for aligned, expected in zip(aligned_layers, layers_b)
     )
+    total_parameters = sum(
+        layer["weight"].numel() + layer["bias"].numel() for layer in layers_a
+    )
+    is_isomorphic = total_cost < tol * total_parameters
 
     return {
         "is_faithfully_isomorphic": is_isomorphic,

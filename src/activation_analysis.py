@@ -11,7 +11,10 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 
-from identifiability_checks import build_network, identifiability_report
+try:
+    from .identifiability_checks import build_network, identifiability_report
+except ImportError:  # Supports direct execution: python src/activation_analysis.py
+    from identifiability_checks import build_network, identifiability_report
 
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"

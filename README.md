@@ -1,94 +1,59 @@
 # Neural Network Identifiability Analysis
 
-Implementation and empirical investigation of identifiability conditions for deep neural networks, based on **Fefferman's framework** and related theoretical results. This project operationalizes mathematical identifiability criteria into implementable checks and invariance tests.
+An educational research prototype for exploring parameter symmetries and selected diagnostic conditions in fully connected PyTorch networks. It accompanies a TUM Mathematics seminar on neural-network identification supervised by Prof. Massimo Fornasier and Dr. Alessandro Scagliotti.
 
-## Background
+## Scope and limitations
 
-This project stems from the seminar **"Identification of Neural Networks"** under **Prof. Massimo Fornasier** and **Dr. Alessandro Scagliotti** at the Technical University of Munich (TUM), Department of Mathematics.
+The repository contains source code and exploratory notebooks, not a validated empirical benchmark. `experiments/` and `results/` intentionally contain no versioned experiment configurations, trained models, or numerical findings. Consequently, this project makes no claim of experimentally establishing identifiability for a trained model or activation family.
 
-### What is Identifiability?
+The checks are finite, numerical diagnostics. They can find parameter patterns such as exact clone pairs or inactive contributions on sampled inputs, but do not prove global functional equivalence or satisfy every hypothesis of a published identifiability theorem. In particular, the activation labels in the code describe the assumptions considered by this prototype; consult the cited papers for formal statements, definitions, and conditions.
 
-Identifiability ensures that neural networks producing the same input-output mapping are equivalent under specific transformations (permutations and sign flips). If two networks generate the same output for all inputs, they should be considered structurally equivalent.
+## Included demonstrations
 
-### Why Does It Matter?
+- Build small fully connected networks with `tanh`, sigmoid, or ReLU activations.
+- Check exact/near-exact hidden-neuron clones, sampled non-degeneracy, and simple parameter diagnostics.
+- Construct tanh networks related by hidden-unit permutations and sign flips, then verify their numerical output agreement and parameter alignment.
+- Explore proposed symmetry-breaking regularizers on generated regression data.
 
-- **Interpreting model behavior**: Uniquely determined parameters enable meaningful interpretation
-- **Debugging and diagnosis**: Identifiable networks have well-defined failure modes
-- **Training consistency**: Ensures reproducibility across training runs
-
-## Key Concepts Implemented
-
-1. **No-Clones Condition**: Detecting clone pairs (neurons with identical weights/biases in the same layer)
-2. **Non-Degeneracy Checks**: Verifying all nodes contribute to the network output
-3. **Self-Avoiding Property**: Checking that weight/bias configurations avoid degenerate overlaps
-4. **Activation-Dependent Uniqueness**: Analyzing how sigmoid/tanh activations guarantee parameter identifiability vs. ReLU limitations
-5. **Network Isomorphisms**: Detecting faithful and extensional isomorphisms between networks
-6. **Symmetry-Breaking Strategies**: Proposed constraints to reduce equivalence classes
-
-## Project Structure
-
-```
-Neural-Network-Identifiability-Analysis/
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── src/
-│   ├── __init__.py
-│   ├── identifiability_checks.py   # Core identifiability verification
-│   ├── network_isomorphisms.py     # Isomorphism detection algorithms
-│   ├── activation_analysis.py      # Activation function properties
-│   ├── symmetry_breaking.py        # Symmetry-breaking strategies
-│   └── visualization.py            # Visualization utilities
-├── notebooks/
-│   ├── 01_Identifiability_Conditions.ipynb
-│   └── 02_Empirical_Analysis.ipynb
-├── experiments/                    # Experiment configs and logs
-└── results/                        # Generated plots and analysis
-```
-
-## Quick Start
+## Setup
 
 ```bash
 git clone https://github.com/mzquadri/Neural-Network-Identifiability-Analysis.git
 cd Neural-Network-Identifiability-Analysis
-
+python -m venv .venv
+.venv\Scripts\activate  # On macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-
-# Run identifiability checks on a sample network
-python src/identifiability_checks.py --architecture 5 10 10 1 --activation tanh
-
-# Detect isomorphisms between two networks
-python src/network_isomorphisms.py --compare
-
-# Analyze activation function impact
-python src/activation_analysis.py
 ```
 
-## Key Results
+## Run the examples
 
-| Activation | Identifiable (up to symmetry) | Clone-Free | Self-Avoiding |
-|-----------|-------------------------------|------------|---------------|
-| Sigmoid   | Yes (up to permutation)       | Checkable  | Verifiable    |
-| Tanh      | Yes (up to +/- and permutation)| Checkable  | Verifiable    |
-| ReLU      | No (fails genericity)         | N/A        | N/A           |
+```bash
+# Report diagnostics for a seeded toy network.
+python -m src.identifiability_checks --architecture 3 4 1 --activation tanh
 
-## Theoretical References
+# Verify a generated permutation/sign-flip equivalent network and reject an unrelated one.
+python -m src.network_isomorphisms --compare
 
-- **Fefferman, C.** (1994). Reconstructing a Neural Net from its Output. *Revista Matematica Iberoamericana*.
-- **Bona-Pellissier, Miche, Malgouyres** (2022). Parameter Identifiability of Neural Networks with ReLU, Tanh, and Sigmoid Activations.
-- **Petzka, H., Trimmel, M.** (2020). On the Identifiability of Neural Networks.
+# Generate exploratory activation and symmetry-breaking plots under results/.
+python -m src.activation_analysis
+python -m src.symmetry_breaking
+```
 
-## Technical Stack
+The examples seed PyTorch where stated, but generated figures and any future training outcomes are local exploratory outputs. Keep the architecture, random seed, package versions, hardware, and complete training configuration when reporting a new result.
 
-- **Framework**: PyTorch
-- **Visualization**: Matplotlib, NetworkX
-- **Numerical**: NumPy, SciPy
+## Verification
 
-## Author
+```bash
+python scripts/check_repository.py
+python -m unittest discover -s tests -v
+```
 
-**Mohd Zamin Quadri** - M.Sc. Mathematics in Science and Engineering, Technical University of Munich
+## References
 
-Seminar supervised by Prof. Massimo Fornasier and Dr. Alessandro Scagliotti (TUM CIT)
+- Fefferman, C. (1994). *Reconstructing a Neural Net from Its Output*. Revista Matematica Iberoamericana.
+- Bona-Pellissier, Miche, and Malgouyres (2022). *Parameter Identifiability of Neural Networks with ReLU, Tanh, and Sigmoid Activations*.
+- Petzka and Trimmel (2020). *On the Identifiability of Neural Networks*.
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-mohd--zamin-blue)](https://www.linkedin.com/in/mohd-zamin/)
-[![GitHub](https://img.shields.io/badge/GitHub-mzquadri-black)](https://github.com/mzquadri)
+## License
+
+Released under the [MIT License](LICENSE).

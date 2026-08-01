@@ -11,7 +11,10 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import List
 
-from identifiability_checks import build_network, extract_parameters, check_no_clones
+try:
+    from .identifiability_checks import build_network, extract_parameters, check_no_clones
+except ImportError:  # Supports direct execution: python src/symmetry_breaking.py
+    from identifiability_checks import build_network, extract_parameters, check_no_clones
 
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
