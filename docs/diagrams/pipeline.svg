@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="660" viewBox="0 0 940 660" font-family="Segoe UI, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,3 L0,6 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect width="940" height="660" fill="#ffffff"/>
+
+  <!-- network construction -->
+  <rect x="270" y="24" width="400" height="60" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="470" y="48" text-anchor="middle" font-size="15" font-weight="bold" fill="#7c3aed">Fully connected PyTorch network</text>
+  <text x="470" y="68" text-anchor="middle" font-size="13" fill="#334155">tanh &#183; sigmoid &#183; ReLU &#183; e.g. architecture 3-4-1</text>
+
+  <path d="M470,84 L470,114" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- split to 4 check modules -->
+  <path d="M470,176 L470,206 L250,206 L250,234" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M470,176 L470,206 L690,206 L690,234" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M470,176 L470,206 L250,206 L250,350" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M470,176 L470,206 L690,206 L690,350" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- source box duplicated height: keep 116 -->
+  <rect x="270" y="116" width="400" height="60" rx="10" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="470" y="140" text-anchor="middle" font-size="15" font-weight="bold" fill="#2563eb">src.identifiability_checks</text>
+  <text x="470" y="160" text-anchor="middle" font-size="13" fill="#334155">numerical diagnostics on sampled inputs</text>
+
+  <!-- analysis grid row A -->
+  <rect x="40" y="236" width="420" height="84" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="250" y="258" text-anchor="middle" font-size="15" font-weight="bold" fill="#7c3aed">src.network_isomorphisms</text>
+  <text x="250" y="280" text-anchor="middle" font-size="13" fill="#475569">hidden-unit permutations &#183; sign flips</text>
+  <text x="250" y="300" text-anchor="middle" font-size="13" fill="#475569">build related networks and verify them</text>
+
+  <rect x="480" y="236" width="420" height="84" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="690" y="258" text-anchor="middle" font-size="15" font-weight="bold" fill="#7c3aed">src.symmetry_breaking</text>
+  <text x="690" y="280" text-anchor="middle" font-size="13" fill="#475569">proposed regularizers to break symmetries</text>
+  <text x="690" y="300" text-anchor="middle" font-size="13" fill="#475569">on generated regression data</text>
+
+  <!-- analysis grid row B -->
+  <rect x="40" y="352" width="420" height="84" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="250" y="374" text-anchor="middle" font-size="15" font-weight="bold" fill="#7c3aed">src.activation_analysis</text>
+  <text x="250" y="396" text-anchor="middle" font-size="13" fill="#475569">explore activation families</text>
+  <text x="250" y="416" text-anchor="middle" font-size="13" fill="#475569">tanh &#183; sigmoid &#183; ReLU assumptions</text>
+
+  <rect x="480" y="352" width="420" height="84" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+  <text x="690" y="374" text-anchor="middle" font-size="15" font-weight="bold" fill="#16a34a">Verification</text>
+  <text x="690" y="396" text-anchor="middle" font-size="13" fill="#475569">numerical output agreement</text>
+  <text x="690" y="416" text-anchor="middle" font-size="13" fill="#475569">parameter alignment &#183; tests/</text>
+
+  <!-- arrows to output -->
+  <path d="M250,320 L250,470" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M690,320 L690,470" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M250,436 L250,470" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M690,436 L690,470" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- output -->
+  <rect x="110" y="472" width="720" height="62" rx="10" fill="#16a34a"/>
+  <text x="470" y="498" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffffff">Outputs</text>
+  <text x="470" y="520" text-anchor="middle" font-size="13" fill="#ecfdf5">diagnostics report &#183; equivalence verification &#183; exploratory figures under results/</text>
+
+  <!-- scope chip -->
+  <rect x="150" y="566" width="640" height="56" rx="10" fill="#db2777"/>
+  <text x="470" y="590" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">Educational research prototype</text>
+  <text x="470" y="610" text-anchor="middle" font-size="13" fill="#fdf2f8">finite diagnostics only &#183; no validated empirical benchmark &#183; not a proof of identifiability</text>
+</svg>

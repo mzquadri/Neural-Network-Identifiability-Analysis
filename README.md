@@ -1,6 +1,6 @@
 # Neural Network Identifiability Analysis
 
-An educational research prototype for exploring parameter symmetries and selected diagnostic conditions in fully connected PyTorch networks. It accompanies a TUM Mathematics seminar on neural-network identification supervised by Prof. Massimo Fornasier and Dr. Alessandro Scagliotti.
+Two networks with identical weights always do the same thing. The far more interesting question is the reverse: if two networks produce the same output on every input, must their internal parameters be the same? This project is a small, educational playground for that question. It accompanies a TUM Mathematics seminar on neural-network identification supervised by Prof. Massimo Fornasier and Dr. Alessandro Scagliotti, and explores the parameter symmetries that let a fully connected network hide equivalent behaviour inside different weights - along with the numerical diagnostics that can expose them.
 
 ## Scope and limitations
 
@@ -14,6 +14,10 @@ The checks are finite, numerical diagnostics. They can find parameter patterns s
 - Check exact/near-exact hidden-neuron clones, sampled non-degeneracy, and simple parameter diagnostics.
 - Construct tanh networks related by hidden-unit permutations and sign flips, then verify their numerical output agreement and parameter alignment.
 - Explore proposed symmetry-breaking regularizers on generated regression data.
+
+The figure below shows how the demonstrations fit together:
+
+![Neural network identifiability analysis pipeline](docs/diagrams/pipeline.svg)
 
 ## Setup
 
