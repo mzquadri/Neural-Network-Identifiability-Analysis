@@ -118,6 +118,11 @@ Anything below 1e-12 at double precision is treated here as rounding. That
 threshold is stated rather than implied, because "the outputs are identical" would
 be false: they agree to rounding.
 
+The single-precision column is an order of magnitude, not a fixed number. Its
+value depends on the summation order the platform chooses, and the same run
+reports 1.0e-07 on one machine and 1.3e-07 on another. The double-precision
+column is stable and is what the conclusions rest on.
+
 ## A worked pair
 
 ![Two networks, one function](docs/figures/03_worked_counterexample.png)

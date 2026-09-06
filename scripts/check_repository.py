@@ -67,19 +67,28 @@ def main() -> int:
         if row is None:
             problems.append(f"precision row for {label} is missing")
             continue
+        # The single precision column is an order of magnitude claim, not a
+        # precise one: a float32 rounding residual depends on the summation order
+        # the platform's BLAS chooses, and CI legitimately reports 1.3e-07 where
+        # this machine reports 1.0e-07. The double precision column is what the
+        # conclusions rest on, so it is held to a tight tolerance.
         pairs = (
-            (row.group(1), case["float32_max_output_difference"], "single"),
-            (row.group(2), case["float64_max_output_difference"], "double"),
+            (row.group(1), case["float32_max_output_difference"], "single", 5.0),
+            (row.group(2), case["float64_max_output_difference"], "double", 1.25),
         )
-        for stated, actual, which in pairs:
+        for stated, actual, which, factor in pairs:
             stated_value = float(stated)
-            # An exact zero must be stated as zero; everything else is compared
-            # loosely, since the last digit differs between machines.
-            ok = (stated_value == 0 if actual == 0
-                  else abs(stated_value - actual) / actual < 0.25)
+            if actual == 0:
+                ok = stated_value == 0
+            elif stated_value == 0:
+                ok = False
+            else:
+                ratio = max(stated_value / actual, actual / stated_value)
+                ok = ratio < factor
             if not ok:
                 problems.append(f"precision row {label} ({which}): README says "
-                                f"{stated}, the run gives {actual:.2e}")
+                                f"{stated}, the run gives {actual:.2e} "
+                                f"(allowed factor {factor})")
 
     if not run["negative_scale_rejected"]:
         problems.append("a negative scale factor is no longer rejected, but the "
