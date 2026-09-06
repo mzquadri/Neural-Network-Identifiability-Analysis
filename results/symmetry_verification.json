@@ -1,0 +1,125 @@
+{
+  "environment": {
+    "generated_utc": "2026-09-06T11:44:39Z",
+    "torch": "2.11.0+xpu"
+  },
+  "setup": {
+    "architecture": [
+      5,
+      10,
+      8,
+      1
+    ],
+    "activations": [
+      "tanh",
+      "sigmoid",
+      "relu"
+    ],
+    "seed": 42,
+    "n_test_inputs": 4000,
+    "input_distribution": "standard normal",
+    "scale_factor": 1.7,
+    "exact_tolerance_float64": 1e-12
+  },
+  "cases": {
+    "tanh|permutation": {
+      "activation": "tanh",
+      "transformation": "permutation",
+      "float32_max_output_difference": 1.1920928955078125e-07,
+      "float32_mean_output_difference": 1.525692638892906e-08,
+      "float64_max_output_difference": 2.220446049250313e-16,
+      "float64_mean_output_difference": 2.8872737534157974e-17,
+      "parameter_l1_distance": 30.401222467422485,
+      "function_preserved": true
+    },
+    "tanh|sign_flip": {
+      "activation": "tanh",
+      "transformation": "sign_flip",
+      "float32_max_output_difference": 0.0,
+      "float32_mean_output_difference": 0.0,
+      "float64_max_output_difference": 0.0,
+      "float64_mean_output_difference": 0.0,
+      "parameter_l1_distance": 33.22177243232727,
+      "function_preserved": true
+    },
+    "tanh|positive_scaling": {
+      "activation": "tanh",
+      "transformation": "positive_scaling",
+      "float32_max_output_difference": 0.16986221075057983,
+      "float32_mean_output_difference": 0.058562811464071274,
+      "float64_max_output_difference": 0.1698622080443385,
+      "float64_mean_output_difference": 0.05856281024995319,
+      "parameter_l1_distance": 11.129445158410817,
+      "function_preserved": false
+    },
+    "sigmoid|permutation": {
+      "activation": "sigmoid",
+      "transformation": "permutation",
+      "float32_max_output_difference": 7.450580596923828e-08,
+      "float32_mean_output_difference": 1.2971461238464599e-08,
+      "float64_max_output_difference": 1.1102230246251565e-16,
+      "float64_mean_output_difference": 2.1989354781482007e-17,
+      "parameter_l1_distance": 30.401222467422485,
+      "function_preserved": true
+    },
+    "sigmoid|sign_flip": {
+      "activation": "sigmoid",
+      "transformation": "sign_flip",
+      "float32_max_output_difference": 0.2963947653770447,
+      "float32_mean_output_difference": 0.2944487929344177,
+      "float64_max_output_difference": 0.29639470613464025,
+      "float64_mean_output_difference": 0.29444877322768104,
+      "parameter_l1_distance": 33.22177243232727,
+      "function_preserved": false
+    },
+    "sigmoid|positive_scaling": {
+      "activation": "sigmoid",
+      "transformation": "positive_scaling",
+      "float32_max_output_difference": 0.06668312847614288,
+      "float32_mean_output_difference": 0.05881480872631073,
+      "float64_max_output_difference": 0.06668312683869626,
+      "float64_mean_output_difference": 0.058814809985553586,
+      "parameter_l1_distance": 11.129445158410817,
+      "function_preserved": false
+    },
+    "relu|permutation": {
+      "activation": "relu",
+      "transformation": "permutation",
+      "float32_max_output_difference": 5.960464477539063e-08,
+      "float32_mean_output_difference": 3.3695251033805107e-09,
+      "float64_max_output_difference": 1.1102230246251565e-16,
+      "float64_mean_output_difference": 6.848688283156434e-18,
+      "parameter_l1_distance": 30.401222467422485,
+      "function_preserved": true
+    },
+    "relu|sign_flip": {
+      "activation": "relu",
+      "transformation": "sign_flip",
+      "float32_max_output_difference": 0.7486622929573059,
+      "float32_mean_output_difference": 0.2240210622549057,
+      "float64_max_output_difference": 0.7486623311498564,
+      "float64_mean_output_difference": 0.2240210649343247,
+      "parameter_l1_distance": 33.22177243232727,
+      "function_preserved": false
+    },
+    "relu|positive_scaling": {
+      "activation": "relu",
+      "transformation": "positive_scaling",
+      "float32_max_output_difference": 1.043081283569336e-07,
+      "float32_mean_output_difference": 7.8547746085178e-09,
+      "float64_max_output_difference": 1.1102230246251565e-16,
+      "float64_mean_output_difference": 1.2736339760621717e-17,
+      "parameter_l1_distance": 11.129445158410817,
+      "function_preserved": true
+    }
+  },
+  "preserved": [
+    "tanh|permutation",
+    "tanh|sign_flip",
+    "sigmoid|permutation",
+    "relu|permutation",
+    "relu|positive_scaling"
+  ],
+  "negative_scale_rejected": true,
+  "note": "A sampled comparison can refute a claimed symmetry but cannot establish global functional equivalence. Each preserved case is an explicit pair of distinct parameter vectors agreeing on every input tested."
+}
