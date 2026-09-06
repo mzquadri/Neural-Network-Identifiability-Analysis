@@ -7,12 +7,9 @@ hidden-layer neuron permutations and (for tanh) sign flips.
 """
 
 import argparse
-from itertools import permutations
-from typing import List, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
-import numpy as np
 from scipy.optimize import linear_sum_assignment
 
 try:
@@ -25,8 +22,8 @@ except ImportError:  # Supports direct execution: python src/network_isomorphism
 # Permutation and sign-flip operations
 # ──────────────────────────────────────────────
 def apply_permutation(
-    layers: List[Dict], layer_idx: int, perm: List[int]
-) -> List[Dict]:
+    layers: list[dict], layer_idx: int, perm: list[int]
+) -> list[dict]:
     """
     Apply a neuron permutation to a specific hidden layer.
 
@@ -53,8 +50,8 @@ def apply_permutation(
 
 
 def apply_sign_flips(
-    layers: List[Dict], layer_idx: int, signs: List[int]
-) -> List[Dict]:
+    layers: list[dict], layer_idx: int, signs: list[int]
+) -> list[dict]:
     """
     Apply sign flips to neurons in a hidden layer.
     For tanh activation: f(-x) = -f(x), so flipping signs preserves the mapping.
@@ -66,7 +63,9 @@ def apply_sign_flips(
     import copy
 
     new_layers = copy.deepcopy(layers)
-    signs_tensor = torch.tensor(signs, dtype=torch.float32)
+    # Match the network's dtype. A hardcoded float32 here silently downcasts a
+    # float64 network and hides the precision the caller is trying to measure.
+    signs_tensor = torch.tensor(signs, dtype=layers[layer_idx]["weight"].dtype)
 
     # Flip incoming
     new_layers[layer_idx]["weight"] = layers[layer_idx][
@@ -83,16 +82,57 @@ def apply_sign_flips(
     return new_layers
 
 
+def apply_positive_scaling(
+    layers: list[dict], layer_idx: int, scales: list[float]
+) -> list[dict]:
+    """
+    Rescale hidden neurons by strictly positive factors.
+
+    Valid only for positively homogeneous activations, which among the three
+    used here means ReLU: ReLU(c z) = c ReLU(z) holds for c > 0 and fails for
+    c < 0. tanh and sigmoid are not positively homogeneous, so this is not a
+    symmetry for them.
+
+    When scaling neuron j in layer l by c_j:
+    - Multiply W^l[j, :] and b^l[j] by c_j
+    - Divide W^{l+1}[:, j] by c_j
+
+    The bias must be scaled with the weights. Scaling only the weights changes
+    the location of the kink and is not a symmetry at all.
+    """
+    import copy
+
+    if any(c <= 0 for c in scales):
+        raise ValueError(
+            "positive scaling requires every factor to be strictly positive; "
+            "ReLU is positively homogeneous only for c > 0"
+        )
+
+    new_layers = copy.deepcopy(layers)
+    dtype = layers[layer_idx]["weight"].dtype
+    scale_tensor = torch.tensor(scales, dtype=dtype)
+
+    new_layers[layer_idx]["weight"] = layers[layer_idx]["weight"] * scale_tensor.unsqueeze(1)
+    new_layers[layer_idx]["bias"] = layers[layer_idx]["bias"] * scale_tensor
+
+    if layer_idx + 1 < len(layers):
+        new_layers[layer_idx + 1]["weight"] = (
+            layers[layer_idx + 1]["weight"] / scale_tensor.unsqueeze(0)
+        )
+
+    return new_layers
+
+
 # ──────────────────────────────────────────────
 # Isomorphism checking
 # ──────────────────────────────────────────────
 def check_extensional_isomorphism(
     model_a: nn.Module,
     model_b: nn.Module,
-    architecture: List[int],
+    architecture: list[int],
     n_test: int = 1000,
     tol: float = 1e-5,
-) -> Dict:
+) -> dict:
     """
     Check if two networks are extensionally isomorphic.
 
@@ -126,7 +166,7 @@ def find_layer_permutation(
     W_b: torch.Tensor,
     b_b: torch.Tensor,
     allow_sign_flips: bool = True,
-) -> Tuple[Optional[List[int]], Optional[List[int]]]:
+) -> tuple[list[int] | None, list[int] | None, float]:
     """
     Find permutation (and optionally sign flips) that maps layer A to layer B.
 
@@ -134,8 +174,12 @@ def find_layer_permutation(
 
     Returns
     -------
-    permutation : list of int or None
-    signs : list of int or None (each +1 or -1)
+    permutation : list of int
+        ``permutation[source] == target``.
+    signs : list of int
+        Each +1 or -1, indexed by source neuron.
+    total_cost : float
+        Sum of matched neuron distances. Zero for an exact relabelling.
     """
     D = W_a.shape[0]
     cost_matrix = torch.zeros(D, D)
@@ -160,7 +204,7 @@ def find_layer_permutation(
 
     # Determine signs
     if allow_sign_flips:
-        for i, j in zip(row_ind, col_ind):
+        for i, j in zip(row_ind, col_ind, strict=True):
             diff_pos = (W_a[i] - W_b[j]).norm() + abs(b_a[i] - b_b[j])
             diff_neg = (W_a[i] + W_b[j]).norm() + abs(b_a[i] + b_b[j])
             best_signs[i] = -1 if diff_neg < diff_pos else 1
@@ -171,11 +215,11 @@ def find_layer_permutation(
 
 
 def check_faithful_isomorphism(
-    layers_a: List[Dict],
-    layers_b: List[Dict],
+    layers_a: list[dict],
+    layers_b: list[dict],
     allow_sign_flips: bool = True,
     tol: float = 1e-4,
-) -> Dict:
+) -> dict:
     """
     Check if two networks are faithfully isomorphic.
 
@@ -188,11 +232,11 @@ def check_faithful_isomorphism(
             "reason": "Different number of layers",
         }
 
-    for l in range(len(layers_a)):
-        if layers_a[l]["weight"].shape != layers_b[l]["weight"].shape:
+    for index in range(len(layers_a)):
+        if layers_a[index]["weight"].shape != layers_b[index]["weight"].shape:
             return {
                 "is_faithfully_isomorphic": False,
-                "reason": f"Different layer {l} sizes",
+                "reason": f"Different layer {index} sizes",
             }
 
     # Align one hidden layer at a time. A layer's permutation/sign changes its
@@ -205,27 +249,28 @@ def check_faithful_isomorphism(
     permutations_found = []
     signs_found = []
 
-    for l in range(len(aligned_layers) - 1):  # Hidden layers
-        perm, signs, cost = find_layer_permutation(
-            aligned_layers[l]["weight"],
-            aligned_layers[l]["bias"],
-            layers_b[l]["weight"],
-            layers_b[l]["bias"],
+    for index in range(len(aligned_layers) - 1):  # Hidden layers
+        perm, signs, _cost = find_layer_permutation(
+            aligned_layers[index]["weight"],
+            aligned_layers[index]["bias"],
+            layers_b[index]["weight"],
+            layers_b[index]["bias"],
             allow_sign_flips=allow_sign_flips,
         )
 
         # ``perm[source] == target``. Reorder the working copy into target
         # order, then apply the sign selected for the corresponding source.
         source_for_target = torch.argsort(torch.tensor(perm))
-        target_signs = torch.tensor(signs, dtype=aligned_layers[l]["weight"].dtype)[
+        target_signs = torch.tensor(signs, dtype=aligned_layers[index]["weight"].dtype)[
             source_for_target
         ]
-        aligned_layers[l]["weight"] = aligned_layers[l]["weight"][source_for_target]
-        aligned_layers[l]["bias"] = aligned_layers[l]["bias"][source_for_target]
-        aligned_layers[l + 1]["weight"] = aligned_layers[l + 1]["weight"][:, source_for_target]
-        aligned_layers[l]["weight"] *= target_signs.unsqueeze(1)
-        aligned_layers[l]["bias"] *= target_signs
-        aligned_layers[l + 1]["weight"] *= target_signs.unsqueeze(0)
+        aligned_layers[index]["weight"] = aligned_layers[index]["weight"][source_for_target]
+        aligned_layers[index]["bias"] = aligned_layers[index]["bias"][source_for_target]
+        aligned_layers[index + 1]["weight"] = (
+            aligned_layers[index + 1]["weight"][:, source_for_target])
+        aligned_layers[index]["weight"] *= target_signs.unsqueeze(1)
+        aligned_layers[index]["bias"] *= target_signs
+        aligned_layers[index + 1]["weight"] *= target_signs.unsqueeze(0)
 
         permutations_found.append(perm)
         signs_found.append(signs)
@@ -233,7 +278,7 @@ def check_faithful_isomorphism(
     total_cost = sum(
         (aligned["weight"] - expected["weight"]).abs().sum().item()
         + (aligned["bias"] - expected["bias"]).abs().sum().item()
-        for aligned, expected in zip(aligned_layers, layers_b)
+        for aligned, expected in zip(aligned_layers, layers_b, strict=True)
     )
     total_parameters = sum(
         layer["weight"].numel() + layer["bias"].numel() for layer in layers_a
@@ -252,30 +297,32 @@ def check_faithful_isomorphism(
 # Create isomorphic network (for testing)
 # ──────────────────────────────────────────────
 def create_permuted_network(
-    model: nn.Module, architecture: List[int], activation: str = "tanh"
+    model: nn.Module, architecture: list[int], activation: str = "tanh"
 ) -> nn.Module:
     """
     Create a network that is isomorphic to the given model by
     randomly permuting hidden neurons and (for tanh) flipping signs.
     """
     layers = extract_parameters(model)
+    # The fresh network only supplies the module structure; every parameter in it
+    # is overwritten below, so its initial values are never read.
     new_model = build_network(architecture, activation)
-    new_layers = extract_parameters(new_model)
 
     # Apply random permutations and sign flips to each hidden layer
-    modified_layers = [dict(l) for l in layers]
+    modified_layers = [dict(layer) for layer in layers]
 
-    for l in range(len(layers) - 1):
-        D_l = layers[l]["weight"].shape[0]
+    for index in range(len(layers) - 1):
+        width = layers[index]["weight"].shape[0]
 
         # Random permutation
-        perm = torch.randperm(D_l).tolist()
-        modified_layers = apply_permutation(modified_layers, l, perm)
+        perm = torch.randperm(width).tolist()
+        modified_layers = apply_permutation(modified_layers, index, perm)
 
-        # Random sign flips (only for tanh)
+        # Random sign flips. Only valid for tanh, which is odd; applying them to
+        # sigmoid or ReLU would change the represented function.
         if activation == "tanh":
-            signs = [(-1) ** int(torch.rand(1).item() > 0.5) for _ in range(D_l)]
-            modified_layers = apply_sign_flips(modified_layers, l, signs)
+            signs = [(-1) ** int(torch.rand(1).item() > 0.5) for _ in range(width)]
+            modified_layers = apply_sign_flips(modified_layers, index, signs)
 
     # Load modified parameters into new model
     linear_modules = [m for m in new_model.modules() if isinstance(m, nn.Linear)]
@@ -313,13 +360,13 @@ def demo_isomorphism_detection():
 
     # Test 1: Extensional isomorphism (A vs B)
     ext_ab = check_extensional_isomorphism(model_a, model_b, architecture)
-    print(f"\nA vs B (permuted copy):")
+    print("\nA vs B (permuted copy):")
     print(f"  Extensionally isomorphic: {ext_ab['is_extensionally_isomorphic']}")
     print(f"  Max output diff: {ext_ab['max_output_difference']:.2e}")
 
     # Test 2: Extensional isomorphism (A vs C)
     ext_ac = check_extensional_isomorphism(model_a, model_c, architecture)
-    print(f"\nA vs C (different network):")
+    print("\nA vs C (different network):")
     print(f"  Extensionally isomorphic: {ext_ac['is_extensionally_isomorphic']}")
     print(f"  Max output diff: {ext_ac['max_output_difference']:.2e}")
 
@@ -327,14 +374,14 @@ def demo_isomorphism_detection():
     layers_a = extract_parameters(model_a)
     layers_b = extract_parameters(model_b)
     faith_ab = check_faithful_isomorphism(layers_a, layers_b)
-    print(f"\nFaithful isomorphism (A vs B):")
+    print("\nFaithful isomorphism (A vs B):")
     print(f"  Is faithfully isomorphic: {faith_ab['is_faithfully_isomorphic']}")
     print(f"  Alignment cost: {faith_ab['total_alignment_cost']:.6f}")
 
     # Test 4: Faithful isomorphism (A vs C)
     layers_c = extract_parameters(model_c)
     faith_ac = check_faithful_isomorphism(layers_a, layers_c)
-    print(f"\nFaithful isomorphism (A vs C):")
+    print("\nFaithful isomorphism (A vs C):")
     print(f"  Is faithfully isomorphic: {faith_ac['is_faithfully_isomorphic']}")
     print(f"  Alignment cost: {faith_ac['total_alignment_cost']:.6f}")
 
