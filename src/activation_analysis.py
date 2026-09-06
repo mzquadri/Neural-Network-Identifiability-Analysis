@@ -201,7 +201,7 @@ def demonstrate_tanh_sign_invariance():
         y_flipped = model(X)
 
     max_diff = (y_original - y_flipped).abs().max().item()
-    print(f"\nTanh sign invariance demonstration:")
+    print("\nTanh sign invariance demonstration:")
     print(f"  Max output difference after sign flip: {max_diff:.2e}")
     print(f"  Invariance verified: {max_diff < 1e-6}")
 
