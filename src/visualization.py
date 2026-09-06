@@ -10,7 +10,6 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import networkx as nx
 
 try:
     from .identifiability_checks import extract_parameters

@@ -1,6 +1,13 @@
-torch>=2.0.0
-numpy>=1.24.0
-scipy>=1.10.0
-matplotlib>=3.7.0
-networkx>=3.1
-seaborn>=0.12.0
+# Pinned from installed distribution metadata, not from memory. The set is
+# verified to resolve from scratch before committing.
+#
+# seaborn and networkx were listed here. seaborn is imported nowhere, and
+# networkx was imported once and never called, so neither is required.
+
+matplotlib==3.10.8
+numpy==2.4.3
+scipy==1.17.0
+
+# torch is a lower bound rather than an exact pin: its build differs by
+# accelerator and comes from a different index. CI installs the CPU build.
+torch>=2.1
