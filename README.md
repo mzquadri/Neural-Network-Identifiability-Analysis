@@ -118,10 +118,12 @@ Anything below 1e-12 at double precision is treated here as rounding. That
 threshold is stated rather than implied, because "the outputs are identical" would
 be false: they agree to rounding.
 
-The single-precision column is an order of magnitude, not a fixed number. Its
-value depends on the summation order the platform chooses, and the same run
-reports 1.0e-07 on one machine and 1.3e-07 on another. The double-precision
-column is stable and is what the conclusions rest on.
+Both residual columns are magnitudes rather than fixed numbers. A rounding
+residual depends on the summation order the platform chooses, so the same run
+reports 1.0e-07 here and 1.3e-07 on another machine, and 1.1e-16 here against
+1.8e-16 there. What is reproducible is the classification: whether a residual
+sits at the rounding floor or is a real difference. The repository check verifies
+that, not the particular multiple of machine epsilon.
 
 ## A worked pair
 

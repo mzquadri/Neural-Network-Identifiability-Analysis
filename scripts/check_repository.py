@@ -67,28 +67,32 @@ def main() -> int:
         if row is None:
             problems.append(f"precision row for {label} is missing")
             continue
-        # The single precision column is an order of magnitude claim, not a
-        # precise one: a float32 rounding residual depends on the summation order
-        # the platform's BLAS chooses, and CI legitimately reports 1.3e-07 where
-        # this machine reports 1.0e-07. The double precision column is what the
-        # conclusions rest on, so it is held to a tight tolerance.
+        # What the precision table claims is a classification, not a measurement:
+        # each entry is either at the rounding floor or is a real difference. The
+        # exact value of a rounding residual is not reproducible across machines,
+        # since it depends on the summation order the platform chooses. CI reports
+        # 1.8e-16 where this machine reports 1.1e-16, and both mean the same thing.
+        #
+        # So a residual the run puts at the floor must be stated at the floor, and
+        # a real difference is compared by magnitude, where the value is stable.
         pairs = (
-            (row.group(1), case["float32_max_output_difference"], "single", 5.0),
-            (row.group(2), case["float64_max_output_difference"], "double", 1.25),
+            (row.group(1), case["float32_max_output_difference"], "single", 1e-5),
+            (row.group(2), case["float64_max_output_difference"], "double", 1e-12),
         )
-        for stated, actual, which, factor in pairs:
+        for stated, actual, which, floor in pairs:
             stated_value = float(stated)
-            if actual == 0:
-                ok = stated_value == 0
-            elif stated_value == 0:
-                ok = False
+            at_floor = actual < floor
+            if at_floor:
+                ok = stated_value < floor
+                detail = f"should be stated below {floor:.0e}"
             else:
-                ratio = max(stated_value / actual, actual / stated_value)
-                ok = ratio < factor
+                ratio = (max(stated_value / actual, actual / stated_value)
+                         if stated_value else float("inf"))
+                ok = ratio < 1.25
+                detail = "differs by more than 25%"
             if not ok:
                 problems.append(f"precision row {label} ({which}): README says "
-                                f"{stated}, the run gives {actual:.2e} "
-                                f"(allowed factor {factor})")
+                                f"{stated}, the run gives {actual:.2e}, {detail}")
 
     if not run["negative_scale_rejected"]:
         problems.append("a negative scale factor is no longer rejected, but the "
